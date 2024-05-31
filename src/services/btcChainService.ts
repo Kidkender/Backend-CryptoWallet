@@ -1,39 +1,13 @@
 import axios from "axios";
-import { PositionTransfer } from "../../common/enums/btcEnum";
-import { bitcoinChainMainnet, blockChainInfor } from "./../../constants/urls";
+import { PositionTransfer } from "../common/enums/btcEnum";
+import { convertBTCtoValue } from "../common/utils/decimalToken";
+import { bitcoinChainMainnet, blockChainInfor } from "../constants/urls";
 import {
   BlockData,
   dataResponseTx,
   filterTxAddressDto,
-  InputsEntity,
-  OutEntity,
   Transaction,
-} from "./../../types/btcTypes";
-import { convertBTCtoValue } from "../../common/utils/decimalToken";
-
-// const wssBTCUrl: string = "wss://ws.blockchain.info/inv";
-// const ws = new WebSocket(wssBTCUrl);
-
-// ws.on("open", function open() {
-//   console.log("Websocket connection opened");
-
-//   const subscribeMessage = JSON.stringify({ op: "blocks_sub" });
-//   ws.send(subscribeMessage);
-//   console.log("Subscribed to new block");
-// });
-
-// ws.on("message", function incoming(data) {
-//   const message = JSON.parse(data.toString());
-//   console.log("Received data:", message);
-// });
-
-// ws.on("close", function close() {
-//   console.log("WebSocket connection closed");
-// });
-
-// ws.on("error", function error(err) {
-//   console.error("WebSocket error:", err);
-// });
+} from "../types/btcTypes";
 
 const header = {
   "Content-Type": "application/json",
@@ -101,4 +75,9 @@ export const filterTransactionByAddress = async (
   const resultOutput = filterAndMapData(out, requestDto.address, false);
 
   return [...resultInput, ...resultOutput];
+};
+
+export const handleNewBlock = async (hashBlock: string) => {
+  const dataBlock = await getBlockData(hashBlock);
+  console.log("new block data: ", dataBlock);
 };

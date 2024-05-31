@@ -3,7 +3,7 @@ import {
   filterTransactionByAddress,
   getBlockData,
   getTransactionData,
-} from "../services/btc-chain/connectRpcBTC";
+} from "../services/btcChainService";
 import { Request, Response } from "express";
 import { filterTxAddressDto } from "../types/btcTypes";
 
