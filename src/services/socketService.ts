@@ -1,6 +1,7 @@
 import WebSocket from "ws";
 import { handleNewBlock } from "./btcChainService";
 import { BlockRaw } from "../types/messageSocketTypes";
+import { createBlock } from "./blockService";
 
 export function createWebSocketConnection() {
   const socket = new WebSocket("wss://ws.blockchain.info/inv");
@@ -18,10 +19,18 @@ export function createWebSocketConnection() {
 
   socket.on("message", async function incoming(data: WebSocket.RawData) {
     const message: BlockRaw = JSON.parse(data.toString());
-    console.log("have hash: ", Boolean(message.x.hash));
-    console.log("New message:", message);
+
     if (message.x.hash) {
-      await handleNewBlock(message.x.hash);
+      const { hash, blockIndex, prevBlockIndex, nTx, time, reward } = message.x;
+      await createBlock(
+        blockIndex,
+        prevBlockIndex,
+        hash,
+        time.toString(),
+        nTx,
+        reward.toString()
+      );
+      await handleNewBlock(hash);
     }
   });
 

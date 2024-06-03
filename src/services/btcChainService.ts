@@ -80,4 +80,10 @@ export const filterTransactionByAddress = async (
 export const handleNewBlock = async (hashBlock: string) => {
   const dataBlock = await getBlockData(hashBlock);
   console.log("new block data: ", dataBlock);
+
+  if (!dataBlock) {
+    return;
+  }
+
+  const transactionHashes = dataBlock.result.tx;
 };
