@@ -8,6 +8,7 @@ import {
   filterTxAddressDto,
   Transaction,
 } from "../types/btcTypes";
+import { client } from "../configs/bitcoinCore";
 
 const header = {
   "Content-Type": "application/json",
@@ -86,4 +87,13 @@ export const handleNewBlock = async (hashBlock: string) => {
   }
 
   const transactionHashes = dataBlock.result.tx;
+};
+
+export const handleTx = async (txHex: string) => {
+  const tx = await client.getRawTransaction(
+    "7acbfd34ed1ea7f027679e8c577580136c8e538070cb830ab84be5005383782b",
+    2,
+    "000000000000000000007420633917a0f0cbbcc600df43a62f36658d730096e1"
+  );
+  console.log("data tx: ", tx);
 };

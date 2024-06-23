@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/zeromq": "^5.2.5",
     "axios": "^1.7.2",
     "bitcoin-core": "^4.2.0",
     "body-parser": "^1.20.2",

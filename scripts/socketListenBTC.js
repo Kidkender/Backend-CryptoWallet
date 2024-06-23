@@ -1,35 +1,38 @@
-const WebSocket = require("ws");
+const zmq = require("zeromq");
+const Client = require("bitcoin-core");
+const { Buffer } = require("buffer");
 
-function createWebSocketConnection() {
-  const socket = new WebSocket("wss://ws.blockchain.info/inv");
+// Cấu hình kết nối đến Bitcoin Core qua RPC
+const client = new Client({
+  network: "mainnet",
+  username: "athena",
+  password: "supersecretpasswordgoeshere",
+  host: "0.tcp.ap.ngrok.io",
+  // host: '127.0.0.1',
+  port: 11039,
+});
 
-  socket.on("open", function open() {
-    console.log("Connected to WebSocket");
+// Tạo một socket kiểu "subscriber"
+const sock = zmq.socket("sub");
 
-    const subscribeMessage = {
-      op: "blocks_sub",
-    };
+// Kết nối đến địa chỉ ZMQ được cấu hình trong bitcoin.conf
+sock.connect("tcp://127.0.0.1:29000");
 
-    socket.send(JSON.stringify(subscribeMessage));
-    console.log("Subscribed to new blocks");
-  });
+// Đăng ký để nhận thông báo về các giao dịch mới (rawtx)
+sock.subscribe("rawtx");
 
-  socket.on("message", function incoming(data) {
-    const message = JSON.parse(data);
-    console.log("New message:", message);
-  });
+console.log("Listening for new transactions...");
 
-  socket.on("close", function close() {
-    console.log("Disconnected from WebSocket");
+sock.on("message", async (topic, message) => {
+  console.log("New transaction detected:");
+  const txHex = message.toString("hex");
+  console.log(txHex); // In ra dữ liệu giao dịch dưới dạng hex
 
-    setTimeout(createWebSocketConnection, 5000);
-  });
-
-  socket.on("error", function error(err) {
-    console.error("WebSocket error:", err);
-  });
-}
-
-createWebSocketConnection();
-
-// If unsubscribes   "op": "blocks_unsub"
+  // Giải mã giao dịch
+  try {
+    const decodedTransaction = await client.decodeRawTransaction(txHex);
+    console.log("Decoded transaction:", decodedTransaction);
+  } catch (err) {
+    console.error("Error decoding transaction:", err);
+  }
+});
