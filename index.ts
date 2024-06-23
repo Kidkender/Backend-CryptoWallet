@@ -3,6 +3,7 @@ import express, { Application, Request, Response } from "express";
 import btcRoutes from "./src/routes/btcRoutes";
 import { createWebSocketConnection } from "./src/services/socketService";
 import mongoose from "mongoose";
+import Client from "bitcoin-core";
 
 dotenv.config();
 
@@ -13,6 +14,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 const mongoString = process.env.DATABASE_URL;
+
+const client = new Client({
+  network: "mainnet",
+  username: "athena",
+  password: "supersecretpasswordgoeshere",
+  host: "0.tcp.ap.ngrok.io",
+  port: 11039,
+});
 
 mongoose.connect(mongoString || "");
 const database = mongoose.connection;
