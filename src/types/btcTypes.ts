@@ -1,10 +1,4 @@
-export interface BlockData {
-  result: Result;
-  error: any;
-  id: number;
-}
-
-export interface Result {
+export interface Block {
   hash: string;
   confirmations: number;
   height: number;
@@ -23,71 +17,9 @@ export interface Result {
   strippedsize: number;
   size: number;
   weight: number;
-  tx: string[];
+  tx: Transaction[];
 }
 
-export interface Transaction {
-  hash: string;
-  ver: number;
-  vin_sz: number;
-  vout_sz: number;
-  size: number;
-  weight: number;
-  fee: number;
-  relayed_by: string;
-  lock_time: number;
-  tx_index: number;
-  double_spend: boolean;
-  time: number;
-  block_index: number;
-  block_height: number;
-  inputs: InputsEntity[];
-  out: OutEntity[];
-}
-export interface InputsEntity {
-  sequence: number;
-  witness: string;
-  script: string;
-  index: number;
-  prev_out: PrevOut;
-}
-export interface PrevOut {
-  addr: string;
-  n: number;
-  script: string;
-  spending_outpoints?: SpendingOutpointsEntity[] | null;
-  spent: boolean;
-  tx_index: number;
-  type: number;
-  value: number;
-}
-export interface SpendingOutpointsEntity {
-  n: number;
-  tx_index: number;
-}
-export interface OutEntity {
-  type: number;
-  spent: boolean;
-  value: number;
-  spending_outpoints?: null[] | null;
-  n: number;
-  tx_index: number;
-  script: string;
-  addr: string;
-}
-
-export interface filterTxAddressDto {
-  address: string;
-  txHash: string;
-}
-
-export interface dataResponseTx {
-  typeParam: string;
-  address: string;
-  value: string;
-}
-
-// New type
 export interface Transaction {
   in_active_chain: boolean;
   txid: string;
@@ -101,11 +33,9 @@ export interface Transaction {
   vout: Vout[];
   fee: number;
   hex: string;
-  blockhash: string;
-  confirmations: number;
-  time: number;
-  blocktime: number;
 }
+
+// New type
 
 export interface Vin {
   txid: string;
@@ -140,4 +70,34 @@ export interface Vout {
   value: number;
   n: number;
   scriptPubKey: ScriptPubKey;
+}
+
+export interface RawTransaction {
+  in_active_chain: boolean;
+  txid: string;
+  hash: string;
+  version: number;
+  size: number;
+  vsize: number;
+  weight: number;
+  locktime: number;
+  vin: Vin[];
+  vout: Vout[];
+  fee: number;
+  hex: string;
+  blockhash: string;
+  confirmations: number;
+  time: number;
+  blocktime: number;
+}
+
+export interface filterTxAddressDto {
+  address: string;
+  txHash: string;
+}
+
+export interface dataResponseTx {
+  typeParam: string;
+  address: string;
+  value: string;
 }

@@ -15,6 +15,7 @@
     "@types/zeromq": "^5.2.5",
     "axios": "^1.7.2",
     "bitcoin-core": "^4.2.0",
+    "bitcore-lib": "^10.0.36",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",

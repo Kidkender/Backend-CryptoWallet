@@ -22,7 +22,7 @@ const convertToPlainObject = (obj) => {
 };
 
 client
-  .getRawTransaction(transactionHash, 2, blockHash)
+  .getRawTransaction(transactionHash, 1, blockHash)
   .then((block) => {
     const decodedBlock = convertToPlainObject(block);
     console.log("data: ", decodedBlock);

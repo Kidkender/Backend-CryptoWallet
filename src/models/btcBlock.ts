@@ -1,22 +1,35 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface IBTCBlock extends Document {
-  index: number;
-  previousBlock: number;
   hash: string;
-  time: string;
+  height: number;
+  previousblockhash: string;
+  time: number;
+  mediantime: number;
+  nonce: number;
+  difficulty: string;
   sizeTx: number;
-  reward: string;
+}
+export interface IBTCBlockData {
+  hash: string;
+  height: number;
+  previousblockhash: string;
+  time: number;
+  mediantime: number;
+  nonce: number;
+  difficulty: string;
+  sizeTx: number;
 }
 
 const btcBlockSchema: Schema = new Schema({
-  index: Number,
-  previousBlock: Number,
-  hash: String,
-  time: String,
-  sizeTx: Number,
-  reward: String,
+  hash: { type: String, required: true },
+  height: { type: Number, required: true },
+  previousblockhash: { type: String, required: true },
+  time: { type: Number, required: true },
+  mediantime: { type: Number, required: true },
+  nonce: { type: Number, required: true },
+  difficulty: { type: String, required: true },
+  sizeTx: { type: Number, required: true },
 });
-
 const BlockModel = mongoose.model<IBTCBlock>("BTCBlock", btcBlockSchema);
 export default BlockModel;
