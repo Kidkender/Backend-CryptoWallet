@@ -16,7 +16,11 @@ declare module "bitcoin-core" {
     constructor(options: ClientOptions);
 
     getBlock(blockHash: string, verbosity: number): Promise<any>;
-    getRawTransaction(txid: string, verbose?: boolean): Promise<any>;
+    getRawTransaction(
+      txid: string,
+      verbose?: number,
+      blockHash?: string
+    ): Promise<any>;
     getBlockchainInfo(): Promise<any>;
     decodeRawTransaction(rawTransaction: string): Promise<any>;
   }

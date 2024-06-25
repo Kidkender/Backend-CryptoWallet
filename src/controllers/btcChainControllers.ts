@@ -1,33 +1,31 @@
 import { StatusCodes } from "http-status-codes";
 
 import { Request, Response } from "express";
-import { filterTxAddressDto } from "../types/btcTypes";
+import { createWallet, getAllWallets } from "../services/walletService";
+import {
+  filterTransactionsByAddress,
+  findTransactionsByAddress,
+} from "./../services/btcChainService";
 
-// export const getBlock = async (req: Request, res: Response) => {
-//   const blockHash = req.params.hash;
-//   if (!blockHash) {
-//     res
-//       .status(StatusCodes.BAD_REQUEST)
-//       .json({ error: "Block hash is required" });
-//     return;
-//   }
-//   const BlockData = await getBlockData(blockHash);
-//   res.status(StatusCodes.OK).json(BlockData);
-// };
+export const getTxByAddress = async (req: Request, res: Response) => {
+  const reqData = req.params;
+  const txData = await findTransactionsByAddress(reqData.address);
+  res.status(StatusCodes.OK).json(txData);
+};
 
-// export const getTransaction = async (req: Request, res: Response) => {
-//   const txHash = req.params.hash;
-//   if (!txHash) {
-//     return res
-//       .status(StatusCodes.BAD_REQUEST)
-//       .json({ error: "Transaction hash is required" });
-//   }
-//   const transactionData = await getTransactionData(txHash);
-//   res.status(StatusCodes.OK).json(transactionData);
-// };
+export const createWalletBTC = async (req: Request, res: Response) => {
+  const reqData = req.body;
+  await createWallet(reqData);
 
-// export const getTxByAddress = async (req: Request, res: Response) => {
-//   const reqData: filterTxAddressDto = req.body;
-//   const txData = await filterTransactionByAddress(reqData);
-//   res.status(StatusCodes.OK).json(txData);
-// };
+  res.sendStatus(StatusCodes.OK);
+};
+
+export const getWalletsBTC = async (req: Request, res: Response) => {
+  const wallets = await getAllWallets();
+  res.status(StatusCodes.OK).json(wallets);
+};
+
+export const getTxFiltered = async (req: Request, res: Response) => {
+  const txFilterd = await filterTransactionsByAddress();
+  res.status(StatusCodes.OK).json(txFilterd);
+};

@@ -1,31 +1,92 @@
-import { LevelRetrieveBlock, PositionTransfer } from "../common/enums/btcEnum";
+import {
+  LevelRetrieveBlock,
+  PositionTransfer,
+  VERBORSITY,
+} from "../common/enums/btcEnum";
 import { convertBTCtoValue } from "../common/utils/decimalToken";
 import { client } from "../configs/bitcoinCore";
-import {
-  Block,
-  dataResponseTx,
-  filterTxAddressDto,
-  Transaction,
-} from "../types/btcTypes";
+import { Block, dataResponseTx, Transaction } from "../types/btcTypes";
 import { createBlock, getLatestBlock } from "./blockService";
+import { getAllWallets } from "./walletService";
 
-const filterAndMapData = <T>(
-  data: T[],
-  addressFilter: string,
-  isInput: boolean
-): dataResponseTx[] => {
-  return data
-    .filter(
-      (entity: any) =>
-        (isInput ? entity.prev_out.addr : entity.addr) === addressFilter
-    )
-    .map((entity: any) => ({
-      typeParam: isInput ? PositionTransfer.SENDER : PositionTransfer.RECEIVER,
-      address: isInput ? entity.prev_out.addr : entity.addr,
-      value: convertBTCtoValue(
-        isInput ? entity.prev_out.value : entity.value
-      ).toString(),
-    }));
+export const filterTransactionsByAddress = async (): Promise<Transaction[]> => {
+  const transactionsWithAddress: Transaction[] = [];
+
+  const latestBlock = await getLatestBlock();
+  if (!latestBlock) {
+    return [];
+  }
+  const block: Block = await client.getBlock(
+    latestBlock.hash,
+    LevelRetrieveBlock.WITH_PREVOUT
+  );
+  const wallets = await getAllWallets();
+  const addressWallets = wallets.map((wallet) => wallet.address);
+
+  for (const tx of block.tx) {
+    const inputContainsAddress = tx.vin.some((input) =>
+      addressWallets.includes(input?.prevout?.scriptPubKey?.address)
+    );
+
+    const outputContainsAddress = tx.vout.some((output) =>
+      addressWallets.includes(output?.scriptPubKey?.address)
+    );
+
+    if (inputContainsAddress || outputContainsAddress) {
+      transactionsWithAddress.push(tx);
+    }
+
+    return transactionsWithAddress;
+
+    // for (const input of tx.vin) {
+    //   if (addressWallets.includes(input?.prevout?.scriptPubKey?.address)) {
+    //     transactionsWithAddress.push({
+    //       typeTx: "Sender",
+    //       address: input.prevout.scriptPubKey.address,
+    //       value: input.prevout.value,
+    //     });
+    //   }
+    // }
+
+    // for (const output of tx.vout) {
+    //   if (addressWallets.includes(output?.scriptPubKey?.address)) {
+    //     transactionsWithAddress.push({
+    //       typeTx: "Receiver",
+    //       address: output.scriptPubKey.address,
+    //       value: output.value,
+    //     });
+    //   }
+    // }
+  }
+
+  return transactionsWithAddress;
+};
+
+export const handleReadableTransaction = async (
+  tx: string,
+  blockHash: string,
+  address: string
+) => {
+  const transaction: Transaction = await client.getRawTransaction(
+    tx,
+    VERBORSITY.WITH_PREVOUT,
+    blockHash
+  );
+  const listTxInput: Transaction[] = [];
+
+  const inputContainsAddress = transaction.vin.some(
+    (input) => input?.prevout?.scriptPubKey?.address === address
+  );
+
+  const outputContainsAddress = transaction.vout.some(
+    (output) => output?.scriptPubKey?.address === address
+  );
+
+  if (
+    (inputContainsAddress && outputContainsAddress) ||
+    outputContainsAddress
+  ) {
+  }
 };
 
 export const findTransactionsByAddress = async (
@@ -38,16 +99,16 @@ export const findTransactionsByAddress = async (
   }
   const block: Block = await client.getBlock(
     latestBlock.hash,
-    LevelRetrieveBlock.BLOCK_HASH
+    LevelRetrieveBlock.WITH_PREVOUT
   );
 
   for (const tx of block.tx) {
     const inputContainsAddress = tx.vin.some(
-      (input) => input.prevout.scriptPubKey.address === address
+      (input) => input?.prevout?.scriptPubKey?.address === address
     );
 
     const outputContainsAddress = tx.vout.some(
-      (output) => output.scriptPubKey.address === address
+      (output) => output?.scriptPubKey?.address === address
     );
 
     if (inputContainsAddress || outputContainsAddress) {
@@ -57,23 +118,6 @@ export const findTransactionsByAddress = async (
 
   return transactionsWithAddress;
 };
-
-// export const filterTransactionByAddress = async (
-//   requestDto: filterTxAddressDto
-// ): Promise<dataResponseTx[] | null> => {
-//   const latestBlock = await getLatestBlock();
-//   if (!latestBlock) { return null; }
-//   const block: Block = await client.getBlock(
-//     latestBlock.hash,
-//     LevelRetrieveBlock.BLOCK_HASH
-//   );
-
-//   const { } = block.tx;
-//   const resultInput = filterAndMapData(block.tx, requestDto.address, true);
-//   const resultOutput = filterAndMapData(out, requestDto.address, false);
-
-//   return [...resultInput, ...resultOutput];
-// };
 
 export const handleBlock = async (
   hashBlock: string

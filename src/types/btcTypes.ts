@@ -35,8 +35,6 @@ export interface Transaction {
   hex: string;
 }
 
-// New type
-
 export interface Vin {
   txid: string;
   vout: number;
@@ -97,7 +95,27 @@ export interface filterTxAddressDto {
 }
 
 export interface dataResponseTx {
-  typeParam: string;
+  typeTx: string;
   address: string;
+  value: number;
+}
+
+export interface TxReadable {
+  confirmations?: number;
+  fee: string;
+  from: string;
+  hash: string;
+  inToken?: string;
+  inValue?: number;
+  outToken?: string;
+  outValue?: number;
+  status: string;
+  to: string;
+  token?: string;
+  type: TypeTransaction;
   value: string;
+}
+export interface TypeTransaction {
+  SEND: "send";
+  RECEIVE: "receive";
 }

@@ -9,3 +9,9 @@ export enum LevelRetrieveBlock {
   WITHOU_PREVOUT = 2,
   WITH_PREVOUT = 3,
 }
+
+export enum VERBORSITY {
+  HEX_DATA = 0,
+  JSON_INFO = 1,
+  WITH_PREVOUT = 2,
+}

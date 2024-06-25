@@ -1,14 +1,19 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-interface IBTCWallet extends Document {
+export interface IBTCWallet extends Document {
   address: string;
+  balance: number;
   createdAt: Date;
 }
 
-export const btcWalletSchema: Schema = new Schema({
+const btcWalletSchema: Schema = new Schema({
   address: {
-    require: true,
     type: String,
+    required: true,
+  },
+  balance: {
+    type: Number,
+    default: 0,
   },
   createdAt: {
     type: Date,
@@ -16,5 +21,9 @@ export const btcWalletSchema: Schema = new Schema({
   },
 });
 
+export interface IBTCWalletRequest {
+  address: string;
+  balance: number;
+}
 const BTCWalletModel = mongoose.model<IBTCWallet>("BTCWallet", btcWalletSchema);
 export default BTCWalletModel;
