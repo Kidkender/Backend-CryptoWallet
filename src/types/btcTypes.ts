@@ -1,3 +1,8 @@
+import {
+  StatusTransaction,
+  TypeTransaction,
+} from "../common/enums/transactionEnum";
+
 export interface Block {
   hash: string;
   confirmations: number;
@@ -102,20 +107,21 @@ export interface dataResponseTx {
 
 export interface TxReadable {
   confirmations?: number;
-  fee: string;
+  fee: number;
   from: string;
   hash: string;
   inToken?: string;
   inValue?: number;
   outToken?: string;
   outValue?: number;
-  status: string;
+  status: StatusTransaction;
   to: string;
   token?: string;
   type: TypeTransaction;
-  value: string;
+  value: number;
 }
-export interface TypeTransaction {
-  SEND: "send";
-  RECEIVE: "receive";
+
+export interface VoutTx {
+  to: string;
+  value: number;
 }

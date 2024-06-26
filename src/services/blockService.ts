@@ -4,7 +4,11 @@ export const createBlock = async (blockData: IBTCBlockData) => {
   try {
     const newBlock = new BlockModel(blockData);
     const savedBlock = await newBlock.save();
-    console.log("New block saved successfully: ", savedBlock.height);
+    console.log(
+      "New block saved successfully: ",
+      savedBlock.height,
+      savedBlock.hash
+    );
 
     return newBlock;
   } catch (error: any) {

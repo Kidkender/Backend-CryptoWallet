@@ -1,17 +1,15 @@
+import { LevelRetrieveBlock, VERBORSITY } from "../common/enums/btcEnum";
 import {
-  LevelRetrieveBlock,
-  PositionTransfer,
-  VERBORSITY,
-} from "../common/enums/btcEnum";
-import { convertBTCtoValue } from "../common/utils/decimalToken";
+  StatusTransaction,
+  TypeTransaction,
+} from "../common/enums/transactionEnum";
 import { client } from "../configs/bitcoinCore";
-import { Block, dataResponseTx, Transaction } from "../types/btcTypes";
+import { Block, Transaction, TxReadable, VoutTx } from "../types/btcTypes";
 import { createBlock, getLatestBlock } from "./blockService";
+import { insertMutiTransaction } from "./transactionService";
 import { getAllWallets } from "./walletService";
 
-export const filterTransactionsByAddress = async (): Promise<Transaction[]> => {
-  const transactionsWithAddress: Transaction[] = [];
-
+export const filterTransactionsByAddress = async () => {
   const latestBlock = await getLatestBlock();
   if (!latestBlock) {
     return [];
@@ -22,71 +20,159 @@ export const filterTransactionsByAddress = async (): Promise<Transaction[]> => {
   );
   const wallets = await getAllWallets();
   const addressWallets = wallets.map((wallet) => wallet.address);
+  const txReadable: TxReadable[] = [];
 
   for (const tx of block.tx) {
-    const inputContainsAddress = tx.vin.some((input) =>
-      addressWallets.includes(input?.prevout?.scriptPubKey?.address)
-    );
-
-    const outputContainsAddress = tx.vout.some((output) =>
-      addressWallets.includes(output?.scriptPubKey?.address)
-    );
-
-    if (inputContainsAddress || outputContainsAddress) {
-      transactionsWithAddress.push(tx);
+    for (const wallet of addressWallets) {
+      const data = await handleReadableTransaction(
+        tx,
+        block.confirmations,
+        wallet
+      );
+      if (!data) {
+        continue;
+      }
+      txReadable.push(...data);
     }
-
-    return transactionsWithAddress;
-
-    // for (const input of tx.vin) {
-    //   if (addressWallets.includes(input?.prevout?.scriptPubKey?.address)) {
-    //     transactionsWithAddress.push({
-    //       typeTx: "Sender",
-    //       address: input.prevout.scriptPubKey.address,
-    //       value: input.prevout.value,
-    //     });
-    //   }
-    // }
-
-    // for (const output of tx.vout) {
-    //   if (addressWallets.includes(output?.scriptPubKey?.address)) {
-    //     transactionsWithAddress.push({
-    //       typeTx: "Receiver",
-    //       address: output.scriptPubKey.address,
-    //       value: output.value,
-    //     });
-    //   }
-    // }
   }
 
-  return transactionsWithAddress;
+  await insertMutiTransaction(txReadable);
 };
 
 export const handleReadableTransaction = async (
+  transaction: Transaction,
+  confirmations: number,
+  address: string
+): Promise<TxReadable[]> => {
+  if (!transaction) {
+    return [];
+  }
+
+  const { hash, fee, vin, vout } = transaction;
+  const statusTx = StatusTransaction.SUCCESS;
+
+  const inputContainsAddress = vin.some(
+    (input) => input?.prevout?.scriptPubKey?.address === address
+  );
+
+  const outputContainsAddress = vout.some(
+    (output) => output?.scriptPubKey?.address === address
+  );
+
+  if (!inputContainsAddress && !outputContainsAddress) {
+    return [];
+  }
+
+  const vinTxs = vin.filter((input) => input?.prevout?.scriptPubKey?.address);
+  if (vinTxs.length == 0) {
+    return [];
+  }
+
+  let addressFrom = vinTxs[0].prevout.scriptPubKey.address;
+  let type = TypeTransaction.SEND;
+
+  const voutTxs: VoutTx[] = vout
+    .filter((output) => output?.scriptPubKey?.address)
+    .map((output) => ({
+      to: output?.scriptPubKey?.address,
+      value: output?.value || 0,
+    }));
+
+  let dataVout: VoutTx[] = [];
+
+  if (outputContainsAddress && inputContainsAddress) {
+    addressFrom = address;
+    dataVout = voutTxs.filter((output) => output.to !== address);
+  } else if (inputContainsAddress) {
+    addressFrom = address;
+    dataVout = voutTxs;
+  } else if (outputContainsAddress) {
+    dataVout = voutTxs.filter((output) => output.to === address);
+    type = TypeTransaction.RECEIVE;
+  }
+
+  const outTxReadable: TxReadable[] = dataVout.map((item) => ({
+    confirmations,
+    hash,
+    from: addressFrom,
+    to: item.to,
+    value: item.value,
+    fee,
+    status: statusTx,
+    type,
+  }));
+  return outTxReadable;
+};
+
+// For test controller
+export const handleReadableTransactions = async (
   tx: string,
   blockHash: string,
   address: string
-) => {
+): Promise<TxReadable[]> => {
   const transaction: Transaction = await client.getRawTransaction(
     tx,
     VERBORSITY.WITH_PREVOUT,
     blockHash
   );
-  const listTxInput: Transaction[] = [];
 
-  const inputContainsAddress = transaction.vin.some(
+  if (!transaction) {
+    return [];
+  }
+
+  const { hash, fee, vin, vout } = transaction;
+  const statusTx = StatusTransaction.SUCCESS;
+
+  const inputContainsAddress = vin.some(
     (input) => input?.prevout?.scriptPubKey?.address === address
   );
 
-  const outputContainsAddress = transaction.vout.some(
+  const outputContainsAddress = vout.some(
     (output) => output?.scriptPubKey?.address === address
   );
 
-  if (
-    (inputContainsAddress && outputContainsAddress) ||
-    outputContainsAddress
-  ) {
+  if (!inputContainsAddress && !outputContainsAddress) {
+    return [];
   }
+
+  const vinTxs = vin.filter((input) => input?.prevout?.scriptPubKey?.address);
+  if (vinTxs.length == 0) {
+    return [];
+  }
+
+  let addressFrom = vinTxs[0].prevout.scriptPubKey.address;
+  let type = TypeTransaction.SEND;
+
+  const voutTxs: VoutTx[] = vout
+    .filter((output) => output?.scriptPubKey?.address)
+    .map((output) => ({
+      to: output?.scriptPubKey?.address,
+      value: output?.value || 0,
+    }));
+
+  let dataVout: VoutTx[] = [];
+
+  if (outputContainsAddress && inputContainsAddress) {
+    addressFrom = address;
+    dataVout = voutTxs.filter((output) => output.to !== address);
+  } else if (inputContainsAddress) {
+    addressFrom = address;
+    dataVout = voutTxs;
+  } else if (outputContainsAddress) {
+    dataVout = voutTxs.filter((output) => output.to === address);
+    type = TypeTransaction.RECEIVE;
+  }
+
+  const outTxReadable: TxReadable[] = dataVout.map((item) => ({
+    hash,
+    from: addressFrom,
+    to: item.to,
+    value: item.value,
+    fee,
+    status: statusTx,
+    type,
+  }));
+  return outTxReadable;
 };
 
 export const findTransactionsByAddress = async (
@@ -147,5 +233,6 @@ export const handleBlock = async (
     difficulty: difficultyStr,
     sizeTx: nTx,
   });
+  await filterTransactionsByAddress();
   return block.tx;
 };
