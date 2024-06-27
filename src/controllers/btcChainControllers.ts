@@ -3,10 +3,8 @@ import { StatusCodes } from "http-status-codes";
 import { Request, Response } from "express";
 import { createWallet, getAllWallets } from "../services/walletService";
 import {
-  filterTransactionsByAddress,
+  syncTxUserWalletFromChain,
   findTransactionsByAddress,
-  handleReadableTransaction,
-  handleReadableTransactions,
 } from "./../services/btcChainService";
 
 export const getTxByAddress = async (req: Request, res: Response) => {
@@ -28,12 +26,6 @@ export const getWalletsBTC = async (req: Request, res: Response) => {
 };
 
 export const getTxFiltered = async (req: Request, res: Response) => {
-  const txFilterd = await filterTransactionsByAddress();
+  const txFilterd = await syncTxUserWalletFromChain();
   res.status(StatusCodes.OK).json(txFilterd);
-};
-
-export const testFunction = async (req: Request, res: Response) => {
-  const { tx, blockHash, address } = req.body;
-  const dataResponse = await handleReadableTransactions(tx, blockHash, address);
-  res.status(StatusCodes.OK).json(dataResponse);
 };

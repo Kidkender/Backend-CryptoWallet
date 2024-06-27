@@ -4,16 +4,21 @@ import {
   TypeTransaction,
 } from "../common/enums/transactionEnum";
 import { client } from "../configs/bitcoinCore";
-import { Block, Transaction, TxReadable, VoutTx } from "../types/btcTypes";
+import {
+  Block,
+  BTCBlock,
+  Transaction,
+  TxReadable,
+  VoutTx,
+} from "../types/btcTypes";
 import { createBlock, getLatestBlock } from "./blockService";
 import { insertMutiTransaction } from "./transactionService";
 import { getAllWallets } from "./walletService";
 
-export const filterTransactionsByAddress = async () => {
+export const syncTxUserWalletFromChain = async () => {
   const latestBlock = await getLatestBlock();
-  if (!latestBlock) {
-    return [];
-  }
+  if (!latestBlock) return [];
+
   const block: Block = await client.getBlock(
     latestBlock.hash,
     LevelRetrieveBlock.WITH_PREVOUT
@@ -29,10 +34,7 @@ export const filterTransactionsByAddress = async () => {
         block.confirmations,
         wallet
       );
-      if (!data) {
-        continue;
-      }
-      txReadable.push(...data);
+      if (data.length) txReadable.push(...data);
     }
   }
 
@@ -44,9 +46,7 @@ export const handleReadableTransaction = async (
   confirmations: number,
   address: string
 ): Promise<TxReadable[]> => {
-  if (!transaction) {
-    return [];
-  }
+  if (!transaction) return [];
 
   const { hash, fee, vin, vout } = transaction;
   const statusTx = StatusTransaction.SUCCESS;
@@ -59,9 +59,7 @@ export const handleReadableTransaction = async (
     (output) => output?.scriptPubKey?.address === address
   );
 
-  if (!inputContainsAddress && !outputContainsAddress) {
-    return [];
-  }
+  if (!inputContainsAddress && !outputContainsAddress) return [];
 
   const vinTxs = vin.filter((input) => input?.prevout?.scriptPubKey?.address);
   if (vinTxs.length == 0) {
@@ -104,85 +102,13 @@ export const handleReadableTransaction = async (
   return outTxReadable;
 };
 
-// For test controller
-export const handleReadableTransactions = async (
-  tx: string,
-  blockHash: string,
-  address: string
-): Promise<TxReadable[]> => {
-  const transaction: Transaction = await client.getRawTransaction(
-    tx,
-    VERBORSITY.WITH_PREVOUT,
-    blockHash
-  );
-
-  if (!transaction) {
-    return [];
-  }
-
-  const { hash, fee, vin, vout } = transaction;
-  const statusTx = StatusTransaction.SUCCESS;
-
-  const inputContainsAddress = vin.some(
-    (input) => input?.prevout?.scriptPubKey?.address === address
-  );
-
-  const outputContainsAddress = vout.some(
-    (output) => output?.scriptPubKey?.address === address
-  );
-
-  if (!inputContainsAddress && !outputContainsAddress) {
-    return [];
-  }
-
-  const vinTxs = vin.filter((input) => input?.prevout?.scriptPubKey?.address);
-  if (vinTxs.length == 0) {
-    return [];
-  }
-
-  let addressFrom = vinTxs[0].prevout.scriptPubKey.address;
-  let type = TypeTransaction.SEND;
-
-  const voutTxs: VoutTx[] = vout
-    .filter((output) => output?.scriptPubKey?.address)
-    .map((output) => ({
-      to: output?.scriptPubKey?.address,
-      value: output?.value || 0,
-    }));
-
-  let dataVout: VoutTx[] = [];
-
-  if (outputContainsAddress && inputContainsAddress) {
-    addressFrom = address;
-    dataVout = voutTxs.filter((output) => output.to !== address);
-  } else if (inputContainsAddress) {
-    addressFrom = address;
-    dataVout = voutTxs;
-  } else if (outputContainsAddress) {
-    dataVout = voutTxs.filter((output) => output.to === address);
-    type = TypeTransaction.RECEIVE;
-  }
-
-  const outTxReadable: TxReadable[] = dataVout.map((item) => ({
-    hash,
-    from: addressFrom,
-    to: item.to,
-    value: item.value,
-    fee,
-    status: statusTx,
-    type,
-  }));
-  return outTxReadable;
-};
-
 export const findTransactionsByAddress = async (
   address: string
 ): Promise<Transaction[]> => {
   const transactionsWithAddress: Transaction[] = [];
   const latestBlock = await getLatestBlock();
-  if (!latestBlock) {
-    return [];
-  }
+  if (!latestBlock) return [];
+
   const block: Block = await client.getBlock(
     latestBlock.hash,
     LevelRetrieveBlock.WITH_PREVOUT
@@ -233,6 +159,11 @@ export const handleBlock = async (
     difficulty: difficultyStr,
     sizeTx: nTx,
   });
-  await filterTransactionsByAddress();
+  await syncTxUserWalletFromChain();
   return block.tx;
+};
+
+export const getLatestHeight = async () => {
+  const data: BTCBlock = await client.getblockchaininfo();
+  return data.blocks;
 };

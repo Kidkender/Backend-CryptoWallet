@@ -17,7 +17,7 @@ export function createWebSocketConnection() {
   console.log("Listening for new block...");
 
   sock.on("message", (topic: Buffer, message: Buffer) => {
-    console.log("New block detected:");
+    console.log("New block detected !!");
     const txHex = message.toString("hex");
     handleBlock(txHex);
   });

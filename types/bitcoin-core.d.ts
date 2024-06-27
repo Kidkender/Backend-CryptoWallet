@@ -23,6 +23,8 @@ declare module "bitcoin-core" {
     ): Promise<any>;
     getBlockchainInfo(): Promise<any>;
     decodeRawTransaction(rawTransaction: string): Promise<any>;
+    getblockchaininfo(): Promise<any>;
+    getblockhash(height: number): Promise<String>;
   }
 
   export default Client;
